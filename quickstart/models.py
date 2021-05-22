@@ -15,6 +15,9 @@ class Lyric(models.Model):
     score = models.CharField(max_length=100,
                              null=True,
                              default=None)
+    feeling = models.CharField(max_length=100,
+                             null=True,
+                             default=None)
 
 
 
