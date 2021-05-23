@@ -1,6 +1,4 @@
 import re
-
-import goslate
 import lyricsgenius
 import nltk
 from afinn import Afinn
@@ -11,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from nltk.tokenize import word_tokenize
 from langdetect import detect
-#from sentiment_analysis_spanish import sentiment_analysis
+from google_trans_new import google_translator
 from sentiment_analysis_spanish import sentiment_analysis
 
 from quickstart.serializers import LyricSerializer
@@ -48,68 +46,44 @@ class AfinnAPIView(GenericAPIView):
         if serializer.is_valid:
             data = request.data
             lyric = data.get('lyric')
-            language = detect(lyric)
-            grades = []
-            sentiments = []
+            sentiment = ''
             affin_data = Afinn()
+            translator = google_translator()
+            language = detect(lyric)
 
-            for line in lyric.split("\n"):
-                print("validando...")
-                sentiment = sentiment_analysis.SentimentAnalysisSpanish()
-                line = line.replace('(','').replace(')','')
-                first_del_pos = line.find("[")
-                second_del_pos = line.find("]")
-                final_line = line
-                if first_del_pos != second_del_pos:
-                    final_line = line.replace(line[first_del_pos:second_del_pos + 1], "")
-                if final_line:
-                    if language == "en":
-                        grades.append(affin_data.score(final_line))
-                    elif language == "es":
-                        grades.append(sentiment.sentiment(final_line))
-                if len(grades) > 0:
-                    grades_sum = 0
-                    for i in grades:
-                        grades_sum += i
-                    sentiment_value = grades_sum / len(grades)
-                    if language == "en":
-                        if sentiment_value >= 0.15:
-                            sentiment = "positive"
-                            sentiments.append(sentiment)
-                        elif sentiment_value < -0.15:
-                            sentiment = "negative"
-                            sentiments.append(sentiment)
-                        else:
-                            sentiment = "neutral"
-                            sentiments.append(sentiment)
-                    elif language == "es":
-                        if sentiment_value >= 0.55:
-                            sentiment = "positive"
-                            sentiments.append(sentiment)
-                        elif sentiment_value < 0.35:
-                            sentiment = "negative"
-                            sentiments.append(sentiment)
-                        else:
-                            sentiment = "neutral"
-                            sentiments.append(sentiment)
-                    else:
-                        sentiment = "neutral"
-                        sentiments.append(sentiment)
+            if language == "en":
+                resultAfinn = affin_data.score(lyric)
+                # Palabras por letra
+                word_count = len(lyric.split())
+            elif language == "es":
+                translation = translator.translate(text=lyric, lang_tgt='en', lang_src='auto')
+                resultAfinn = affin_data.score(translation)
+                # Palabras por letra
+                word_count = len(translation.split())
 
-            countNegative = sentiments.count('negative')
-            countNeutral = sentiments.count('neutral')
-            countPositive = sentiments.count('positive')
-            feeling = ''
-            if countPositive > countNeutral and countPositive > countNegative:
-                feeling = 'Feliz'
-            elif countNegative > countNeutral and countNegative > countPositive:
-                feeling = 'Triste'
-            else:
-                feeling = 'Neutro'
+            # Comparativa score
+            comparative_score = resultAfinn / word_count
 
-            final_score = "{0:.2f}".format(sentiment_value * 100)
-            data['score'] = final_score
-            data['feeling'] = feeling
+            formatScore = "{0:.2f}".format(comparative_score * 100)
+            finalScore = float(formatScore)
+
+            if -4 <= finalScore <= -1:
+                sentiment = 'Desanimado'
+            elif -8 <= finalScore <= -4:
+                sentiment = 'Triste'
+            elif finalScore < -8:
+                sentiment = 'Melancólico'
+            elif -1 <= finalScore <= 1:
+                sentiment = 'Normal'
+            elif 1 <= finalScore <= 4:
+                sentiment = 'Felíz'
+            elif 4 <= finalScore <= 8:
+                sentiment = 'Alegre'
+            elif finalScore > 8:
+                sentiment = 'Fenomenal'
+
+            data['score'] = finalScore
+            data['feeling'] = sentiment
             serializer = LyricSerializer(data)
             return Response(serializer.data)
         else:
