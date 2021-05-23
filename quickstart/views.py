@@ -10,7 +10,6 @@ from rest_framework.views import APIView
 from nltk.tokenize import word_tokenize
 from langdetect import detect
 from google_trans_new import google_translator
-from sentiment_analysis_spanish import sentiment_analysis
 
 from quickstart.serializers import LyricSerializer
 
@@ -186,6 +185,49 @@ class LevelOfComplexityAPIView(GenericAPIView):
         else:
             return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
+class DetectWordTypesAPIView(GenericAPIView):
+    serializer_class = LyricSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = LyricSerializer(data=request.data)
+        if serializer.is_valid:
+            data = request.data
+            lyric = data.get('lyric')
+            statistics = {}
+            tags = {}
+            words = {}
+            tokenLyric = nltk.word_tokenize(lyric)
+            wordTag =  nltk.pos_tag(tokenLyric)
+            for w, t in wordTag:
+                if t in tags:
+                    tags[t] += 1
+                else:
+                    tags[t] = 1
+                if w in words:
+                    if t not in words[w]:
+                        words[w].append(t)
+                else:
+                    words[w] = [t]
+
+            count_tags = []
+            word_tags = []
+
+            tags = {k: v for k, v in sorted(tags.items(), key=lambda item: item[1], reverse=True)}
+            for k, v in tags.items():
+                count_tags.append({'tag': k, 'count': v})
+
+            words = {k: v for k, v in sorted(words.items(), key=lambda item: len(item[1]), reverse=True)}
+
+            for k, v in words.items():
+                word_tags.append({'word': k, 'tags': v})
+
+            statistics["count_tags"] = count_tags
+            statistics["word_tags"] = word_tags
+
+            data = {'analysis': statistics}
+            return Response(data, status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
 #Función para calcular NLPW, pasando como parámetro una lista de palabras
 def defNlpw(words):
