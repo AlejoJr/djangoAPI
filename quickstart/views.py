@@ -13,6 +13,7 @@ from google_trans_new import google_translator
 
 from quickstart.serializers import LyricSerializer
 
+
 class LyricsAPIView(APIView):
     """
         get:
@@ -126,8 +127,12 @@ class AnalyticsAPIView(GenericAPIView):
                             words[word.lower()] = 1
             words = {k: v for k, v in sorted(words.items(), key=lambda item: item[1], reverse=True)}
             list_words = []
+            i = 0
             for k, v in words.items():
-                list_words.append({'word': k, 'number': v})
+                i += 1
+                list_words.append({'text': k, 'value': v})
+                if i == 20:
+                    break
             statistics = {}
             freq_dist = nltk.FreqDist(split_text_cleaned)
             statistics["most_frequent"] = freq_dist.max()
@@ -138,7 +143,6 @@ class AnalyticsAPIView(GenericAPIView):
             statistics["unique_words"] = len(unique_words)
             statistics["list_words"] = list_words
             data = {'analysis': statistics}
-
 
             return Response(data, status.HTTP_200_OK)
         else:
@@ -166,7 +170,7 @@ class LevelOfComplexityAPIView(GenericAPIView):
             for text in lyrics:
                 words = words + ' ' + text
                 sents.append(text)
-                exclude = ['(',')',',','[',']',';',':']
+                exclude = ['(', ')', ',', '[', ']', ';', ':']
                 for pal in word_tokenize(text.lower()):
                     if not pal in exclude:
                         if pal in dic:
@@ -175,7 +179,7 @@ class LevelOfComplexityAPIView(GenericAPIView):
                             dic[pal] = [cont]
                 cont += 1
 
-            #Calcular Índice de legibilidad de la cancion  (IAL)
+            # Calcular Índice de legibilidad de la cancion  (IAL)
             resultNlmp = defNlpw(words.split())
             resultNpxf = defNpxf(sents)
             varIal = 4.71 * resultNlmp + 0.5 * resultNpxf - 21.43
@@ -191,7 +195,7 @@ class LevelOfComplexityAPIView(GenericAPIView):
                         repeated = countLine
                         line = value
                 lineMoreRepeted = {'line': line, 'count': repeated}
-                list_words.append({'word': k, 'line': v, 'more_repeated':lineMoreRepeted})
+                list_words.append({'word': k, 'line': v, 'more_repeated': lineMoreRepeted})
 
             statistics["list_words"] = list_words
 
@@ -199,6 +203,7 @@ class LevelOfComplexityAPIView(GenericAPIView):
             return Response(data, status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+
 
 class DetectWordTypesAPIView(GenericAPIView):
     """
@@ -216,7 +221,7 @@ class DetectWordTypesAPIView(GenericAPIView):
             tags = {}
             words = {}
             tokenLyric = nltk.word_tokenize(lyric)
-            wordTag =  nltk.pos_tag(tokenLyric)
+            wordTag = nltk.pos_tag(tokenLyric)
             for w, t in wordTag:
                 if t in tags:
                     tags[t] += 1
@@ -248,17 +253,20 @@ class DetectWordTypesAPIView(GenericAPIView):
         else:
             return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
-#Función para calcular NLPW, pasando como parámetro una lista de palabras
+
+# Función para calcular NLPW, pasando como parámetro una lista de palabras
 def defNlpw(words):
-    if len(words)==0:
+    if len(words) == 0:
         return 0
     return sum(len(word) for word in words) / len(words)
 
-#Función para calcular NPXF, pasando como parámetro una lista de sentencias
+
+# Función para calcular NPXF, pasando como parámetro una lista de sentencias
 def defNpxf(sents):
-    if len(sents)==0:
+    if len(sents) == 0:
         return 0
-    return sum(numWords(sent) for sent in sents)/len(sents)
+    return sum(numWords(sent) for sent in sents) / len(sents)
+
 
 def numWords(sent):
     return len(word_tokenize(' '.join(sent)))
