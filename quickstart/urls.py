@@ -1,6 +1,7 @@
 from django.urls import path
 
-from quickstart.views import  LyricsAPIView, AfinnAPIView, AnalyticsAPIView, LevelOfComplexityAPIView, DetectWordTypesAPIView
+from quickstart.views import  LyricsAPIView, AfinnAPIView, AnalyticsAPIView, LevelOfComplexityAPIView,\
+    DetectWordTypesAPIView
 
 urlpatterns = [
 

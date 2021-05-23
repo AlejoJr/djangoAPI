@@ -14,7 +14,10 @@ from google_trans_new import google_translator
 from quickstart.serializers import LyricSerializer
 
 class LyricsAPIView(APIView):
-
+    """
+        get:
+        Return the lyrics of the song consulted by artist and title
+        """
     def get(self, request, *args, **kwargs):
         if kwargs.get("artist", None) and kwargs.get("song", None) is not None:
             artist = kwargs["artist"]
@@ -38,6 +41,10 @@ class LyricsAPIView(APIView):
 
 
 class AfinnAPIView(GenericAPIView):
+    """
+            post:
+            Returns the sentiment analysis Afinn of the song
+            """
     serializer_class = LyricSerializer
 
     def post(self, request, *args, **kwargs):
@@ -90,6 +97,10 @@ class AfinnAPIView(GenericAPIView):
 
 
 class AnalyticsAPIView(GenericAPIView):
+    """
+    post:
+    Returns word analysis: most frequent, most frequent probability, lexicon size, unique words and list words
+    """
     serializer_class = LyricSerializer
 
     def post(self, request, *args, **kwargs):
@@ -135,6 +146,10 @@ class AnalyticsAPIView(GenericAPIView):
 
 
 class LevelOfComplexityAPIView(GenericAPIView):
+    """
+        post:
+        Returns Song readability index (IAL) and most repeated words on the same line
+        """
     serializer_class = LyricSerializer
 
     def post(self, request, *args, **kwargs):
@@ -186,6 +201,10 @@ class LevelOfComplexityAPIView(GenericAPIView):
             return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
 class DetectWordTypesAPIView(GenericAPIView):
+    """
+    post:
+    Returns the tag marked by each word as adjective, verbs, pronouns, etc.
+    """
     serializer_class = LyricSerializer
 
     def post(self, request, *args, **kwargs):
