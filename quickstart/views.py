@@ -19,6 +19,7 @@ class LyricsAPIView(APIView):
         get:
         Return the lyrics of the song consulted by artist and title
         """
+
     def get(self, request, *args, **kwargs):
         if kwargs.get("artist", None) and kwargs.get("song", None) is not None:
             artist = kwargs["artist"]
@@ -56,8 +57,12 @@ class AfinnAPIView(GenericAPIView):
             sentiment = ''
             affin_data = Afinn()
             translator = google_translator()
-            language = detect(lyric)
-
+            try:
+                language = detect(lyric)
+            except:
+                language = "en"
+            word_count = 0
+            resultAfinn = 0
             if language == "en":
                 resultAfinn = affin_data.score(lyric)
                 # Palabras por letra
@@ -68,8 +73,10 @@ class AfinnAPIView(GenericAPIView):
                 # Palabras por letra
                 word_count = len(translation.split())
 
+            comparative_score = 0
             # Comparativa score
-            comparative_score = resultAfinn / word_count
+            if word_count != 0:
+                comparative_score = resultAfinn / word_count
 
             formatScore = "{0:.2f}".format(comparative_score * 100)
             finalScore = float(formatScore)
